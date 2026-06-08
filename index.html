@@ -1,0 +1,211 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>高等数学A2成绩查询</title>
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body {
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+    background: #f5f7fa;
+    min-height: 100vh;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    padding: 20px;
+  }
+  .container {
+    background: #fff;
+    border-radius: 16px;
+    box-shadow: 0 4px 24px rgba(0,0,0,0.08);
+    padding: 40px 32px;
+    max-width: 420px;
+    width: 100%;
+    text-align: center;
+  }
+  h1 {
+    font-size: 22px;
+    color: #1a1a2e;
+    margin-bottom: 6px;
+  }
+  .subtitle {
+    font-size: 14px;
+    color: #888;
+    margin-bottom: 28px;
+  }
+  .input-group {
+    display: flex;
+    gap: 10px;
+    margin-bottom: 20px;
+  }
+  input {
+    flex: 1;
+    padding: 12px 16px;
+    border: 2px solid #e0e0e0;
+    border-radius: 10px;
+    font-size: 16px;
+    outline: none;
+    transition: border-color 0.2s;
+  }
+  input:focus { border-color: #4a6cf7; }
+  button {
+    padding: 12px 24px;
+    background: #4a6cf7;
+    color: #fff;
+    border: none;
+    border-radius: 10px;
+    font-size: 16px;
+    cursor: pointer;
+    transition: background 0.2s;
+    white-space: nowrap;
+  }
+  button:hover { background: #3b5de7; }
+  button:disabled { background: #a0b4f7; cursor: not-allowed; }
+  .result {
+    display: none;
+    margin-top: 24px;
+    padding: 24px;
+    background: #f8f9ff;
+    border-radius: 12px;
+    border: 1px solid #e8ecf4;
+  }
+  .result.show { display: block; }
+  .result .name { font-size: 20px; font-weight: 600; color: #1a1a2e; }
+  .result .score {
+    font-size: 48px;
+    font-weight: 700;
+    color: #4a6cf7;
+    margin: 12px 0 4px;
+  }
+  .result .detail { font-size: 13px; color: #999; margin-top: 8px; }
+  .error {
+    display: none;
+    margin-top: 16px;
+    padding: 12px;
+    background: #fff0f0;
+    border-radius: 8px;
+    color: #e74c3c;
+    font-size: 14px;
+  }
+  .error.show { display: block; }
+  .footer {
+    margin-top: 24px;
+    font-size: 12px;
+    color: #bbb;
+  }
+  .hint {
+    font-size: 13px;
+    color: #aaa;
+    margin-bottom: 8px;
+  }
+  /* 简单动画 */
+  @keyframes fadeIn {
+    from { opacity: 0; transform: translateY(8px); }
+    to { opacity: 1; transform: translateY(0); }
+  }
+  .result.show { animation: fadeIn 0.3s ease; }
+</style>
+</head>
+<body>
+<div class="container">
+  <h1>高等数学A2 成绩查询</h1>
+  <p class="subtitle">23Z254班 · 输入学号查询成绩</p>
+
+  <div class="input-group">
+    <input type="text" id="studentId" placeholder="请输入学号" maxlength="20" autocomplete="off">
+    <button id="queryBtn" onclick="queryGrade()">查询</button>
+  </div>
+
+  <div id="error" class="error"></div>
+
+  <div id="result" class="result">
+    <div class="name" id="studentName"></div>
+    <div class="score" id="studentScore"></div>
+    <div class="detail">
+      <span id="studentClass"></span> · <span id="studentCourse"></span>
+    </div>
+  </div>
+
+  <div class="hint">仅支持输入学号查询，成绩仅本人可见</div>
+  <div class="footer">班级成绩查询系统</div>
+</div>
+
+<script>
+// 嵌入成绩数据
+const gradeData = [
+  { "学号": "20241003358", "姓名": "唐诗源", "成绩": "88", "班级": "23Z254", "课程": "高等数学A2", "学院": "人工智能与自动化学院" },
+  { "学号": "20251000107", "姓名": "陈佳明", "成绩": "87", "班级": "23Z254", "课程": "高等数学A2", "学院": "人工智能与自动化学院" },
+  { "学号": "20251001363", "姓名": "白济荣", "成绩": "49", "班级": "23Z254", "课程": "高等数学A2", "学院": "人工智能与自动化学院" },
+  { "学号": "20251001367", "姓名": "代芳阳", "成绩": "99", "班级": "23Z254", "课程": "高等数学A2", "学院": "人工智能与自动化学院" },
+  { "学号": "20251001372", "姓名": "何芃诺", "成绩": "80", "班级": "23Z254", "课程": "高等数学A2", "学院": "人工智能与自动化学院" },
+  { "学号": "20251001388", "姓名": "马子涵", "成绩": "94", "班级": "23Z254", "课程": "高等数学A2", "学院": "人工智能与自动化学院" },
+  { "学号": "20251001397", "姓名": "孙耀东", "成绩": "56", "班级": "23Z254", "课程": "高等数学A2", "学院": "人工智能与自动化学院" },
+  { "学号": "20251001406", "姓名": "王以翀", "成绩": "94", "班级": "23Z254", "课程": "高等数学A2", "学院": "人工智能与自动化学院" },
+  { "学号": "20251001411", "姓名": "熊琦", "成绩": "49", "班级": "23Z254", "课程": "高等数学A2", "学院": "人工智能与自动化学院" },
+  { "学号": "20251001417", "姓名": "张海湘", "成绩": "43", "班级": "23Z254", "课程": "高等数学A2", "学院": "人工智能与自动化学院" },
+  { "学号": "20251002549", "姓名": "郭加朋", "成绩": "70", "班级": "23Z254", "课程": "高等数学A2", "学院": "人工智能与自动化学院" },
+  { "学号": "20251002551", "姓名": "潘秀英", "成绩": "88", "班级": "23Z254", "课程": "高等数学A2", "学院": "人工智能与自动化学院" },
+  { "学号": "20251003280", "姓名": "艾睿阳", "成绩": "71", "班级": "23Z254", "课程": "高等数学A2", "学院": "人工智能与自动化学院" },
+  { "学号": "20251003286", "姓名": "程羽凡", "成绩": "68", "班级": "23Z254", "课程": "高等数学A2", "学院": "人工智能与自动化学院" },
+  { "学号": "20251003288", "姓名": "戴俊杰", "成绩": "59", "班级": "23Z254", "课程": "高等数学A2", "学院": "人工智能与自动化学院" },
+  { "学号": "20251003318", "姓名": "刘雨菲", "成绩": "86", "班级": "23Z254", "课程": "高等数学A2", "学院": "人工智能与自动化学院" },
+  { "学号": "20251003325", "姓名": "梅可欣", "成绩": "92", "班级": "23Z254", "课程": "高等数学A2", "学院": "人工智能与自动化学院" },
+  { "学号": "20251003328", "姓名": "荣曜", "成绩": "96", "班级": "23Z254", "课程": "高等数学A2", "学院": "人工智能与自动化学院" },
+  { "学号": "20251003338", "姓名": "王仁志", "成绩": "93", "班级": "23Z254", "课程": "高等数学A2", "学院": "人工智能与自动化学院" },
+  { "学号": "20251003339", "姓名": "王思源", "成绩": "79", "班级": "23Z254", "课程": "高等数学A2", "学院": "人工智能与自动化学院" },
+  { "学号": "20251003344", "姓名": "王昊铭", "成绩": "84", "班级": "23Z254", "课程": "高等数学A2", "学院": "人工智能与自动化学院" },
+  { "学号": "20251003347", "姓名": "吴桐宇", "成绩": "97", "班级": "23Z254", "课程": "高等数学A2", "学院": "人工智能与自动化学院" },
+  { "学号": "20251003350", "姓名": "徐济健", "成绩": "68", "班级": "23Z254", "课程": "高等数学A2", "学院": "人工智能与自动化学院" },
+  { "学号": "20251003351", "姓名": "徐源", "成绩": "84", "班级": "23Z254", "课程": "高等数学A2", "学院": "人工智能与自动化学院" },
+  { "学号": "20251004217", "姓名": "马建豪", "成绩": "89", "班级": "23Z254", "课程": "高等数学A2", "学院": "人工智能与自动化学院" },
+  { "学号": "20251004223", "姓名": "祝福", "成绩": "92", "班级": "23Z254", "课程": "高等数学A2", "学院": "人工智能与自动化学院" },
+  { "学号": "20251004370", "姓名": "梁永胜", "成绩": "61", "班级": "23Z254", "课程": "高等数学A2", "学院": "人工智能与自动化学院" },
+  { "学号": "20251004371", "姓名": "马娅萍", "成绩": "65", "班级": "23Z254", "课程": "高等数学A2", "学院": "人工智能与自动化学院" },
+  { "学号": "20251004481", "姓名": "曾锦琥", "成绩": "70", "班级": "23Z254", "课程": "高等数学A2", "学院": "人工智能与自动化学院" },
+  { "学号": "20251004638", "姓名": "毕梓云", "成绩": "77", "班级": "23Z254", "课程": "高等数学A2", "学院": "人工智能与自动化学院" },
+  { "学号": "20251004649", "姓名": "闫李朵", "成绩": "97", "班级": "23Z254", "课程": "高等数学A2", "学院": "人工智能与自动化学院" },
+  { "学号": "20258000039", "姓名": "黃瑞熙", "成绩": "75", "班级": "23Z254", "课程": "高等数学A2", "学院": "人工智能与自动化学院" }
+];
+
+// 学号到成绩的快速映射
+const gradeMap = {};
+gradeData.forEach(item => {
+  gradeMap[item["学号"]] = item;
+});
+
+function queryGrade() {
+  const id = document.getElementById('studentId').value.trim();
+  const resultEl = document.getElementById('result');
+  const errorEl = document.getElementById('error');
+
+  resultEl.classList.remove('show');
+  errorEl.classList.remove('show');
+
+  if (!id) {
+    errorEl.textContent = '请输入学号';
+    errorEl.classList.add('show');
+    return;
+  }
+
+  const found = gradeMap[id];
+  if (!found) {
+    errorEl.textContent = '未找到该学号，请确认输入正确';
+    errorEl.classList.add('show');
+    return;
+  }
+
+  document.getElementById('studentName').textContent = found["姓名"];
+  document.getElementById('studentScore').textContent = found["成绩"];
+  document.getElementById('studentClass').textContent = found["班级"];
+  document.getElementById('studentCourse').textContent = found["课程"];
+  resultEl.classList.add('show');
+}
+
+// 回车键查询
+document.getElementById('studentId').addEventListener('keydown', function(e) {
+  if (e.key === 'Enter') queryGrade();
+});
+</script>
+</body>
+</html>
